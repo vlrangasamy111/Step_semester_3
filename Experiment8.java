@@ -2,27 +2,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Experiment 8: College Student Fee Assessment Engine
+ * Demonstrates default interface methods, composition with inheritance,
+ * and selective transport fee inclusion.
+ */
 interface TransportUser {
     default double getTransportFee() {
-        return 12000.0;
+        return 12000.00;
     }
 }
 
 abstract class Student {
-    private String name;
+    private final String studentName;
 
-    public Student(String name) {
-        this.name = name;
+    public Student(String studentName) {
+        this.studentName = studentName;
     }
 
-    public String getName() {
-        return name;
+    public String getStudentName() {
+        return studentName;
     }
 
-    public abstract double calculateTuition();
+    public abstract double calculateTuitionFee();
 
     public double calculateTotalFee() {
-        double fee = calculateTuition();
+        double fee = calculateTuitionFee();
         if (this instanceof TransportUser) {
             fee += ((TransportUser) this).getTransportFee();
         }
@@ -31,71 +36,79 @@ abstract class Student {
 }
 
 class DayScholar extends Student implements TransportUser {
-    public DayScholar(String name) {
-        super(name);
+    public DayScholar(String studentName) {
+        super(studentName);
     }
 
     @Override
-    public double calculateTuition() {
-        return 40000.0;
+    public double calculateTuitionFee() {
+        return 40000.00;
     }
 }
 
 class Hosteller extends Student {
-    public Hosteller(String name) {
-        super(name);
+    public Hosteller(String studentName) {
+        super(studentName);
     }
 
     @Override
-    public double calculateTuition() {
-        return 40000.0 + 60000.0;
+    public double calculateTuitionFee() {
+        return 40000.00 + 60000.00;
     }
 }
 
 class ScholarshipStudent extends Student implements TransportUser {
-    public ScholarshipStudent(String name) {
-        super(name);
+    public ScholarshipStudent(String studentName) {
+        super(studentName);
     }
 
     @Override
-    public double calculateTuition() {
-        return 20000.0;
+    public double calculateTuitionFee() {
+        return 20000.00;
     }
 }
 
 public class Experiment8 {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        if (!scanner.hasNextInt()) return;
-
-        int n = scanner.nextInt();
-        List<Student> students = new ArrayList<>();
-
-        for (int i = 0; i < n; i++) {
-            String type = scanner.next();
-            String name = scanner.next();
-
-            switch (type.toUpperCase()) {
-                case "DAY_SCHOLAR":
-                    students.add(new DayScholar(name));
-                    break;
-                case "HOSTELLER":
-                    students.add(new Hosteller(name));
-                    break;
-                case "SCHOLAR":
-                    students.add(new ScholarshipStudent(name));
-                    break;
+        try (Scanner sc = new Scanner(System.in)) {
+            if (!sc.hasNextInt()) {
+                return;
             }
-        }
 
-        double totalCollected = 0;
-        for (Student student : students) {
-            double fee = student.calculateTotalFee();
-            totalCollected += fee;
-            System.out.printf("%s: %.2f%n", student.getName(), fee);
-        }
+            int n = sc.nextInt();
+            List<Student> students = new ArrayList<>(n);
 
-        System.out.printf("Total Collected: %.2f%n", totalCollected);
-        scanner.close();
+            for (int i = 0; i < n; i++) {
+                String type = sc.next().toUpperCase();
+                String name = sc.next();
+
+                Student s = createStudent(type, name);
+                if (s != null) {
+                    students.add(s);
+                }
+            }
+
+            double totalCollected = 0.0;
+            for (Student student : students) {
+                double fee = student.calculateTotalFee();
+                totalCollected += fee;
+                System.out.printf("%s: %.2f%n", student.getStudentName(), fee);
+            }
+
+            System.out.printf("Total Collected: %.2f%n", totalCollected);
+        }
+    }
+
+    private static Student createStudent(String type, String name) {
+        switch (type) {
+            case "DAY_SCHOLAR":
+                return new DayScholar(name);
+            case "HOSTELLER":
+                return new Hosteller(name);
+            case "SCHOLAR":
+                return new ScholarshipStudent(name);
+            default:
+                return null;
+        }
     }
 }

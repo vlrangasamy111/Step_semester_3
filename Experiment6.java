@@ -2,28 +2,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Experiment 6: Cinema Ticketing Billing System
+ * Demonstrates abstract class inheritance, method overriding, and polymorphic calculation.
+ */
 abstract class MovieTicket {
-    private String seatType;
-    private int count;
-    private static final double CONVENIENCE_FEE = 20.0;
+    private final String seatType;
+    private final int ticketCount;
+    protected static final double CONVENIENCE_FEE = 20.00;
 
-    public MovieTicket(String seatType, int count) {
+    public MovieTicket(String seatType, int ticketCount) {
         this.seatType = seatType;
-        this.count = count;
+        this.ticketCount = ticketCount;
     }
 
     public String getSeatType() {
         return seatType;
     }
 
-    public int getCount() {
-        return count;
+    public int getTicketCount() {
+        return ticketCount;
     }
 
-    public abstract double getPricePerTicket();
+    public abstract double getBasePricePerTicket();
 
     public double calculateTotalAmount() {
-        return getCount() * (getPricePerTicket() + CONVENIENCE_FEE);
+        return ticketCount * (getBasePricePerTicket() + CONVENIENCE_FEE);
     }
 }
 
@@ -33,8 +37,8 @@ class RegularTicket extends MovieTicket {
     }
 
     @Override
-    public double getPricePerTicket() {
-        return 150.0;
+    public double getBasePricePerTicket() {
+        return 150.00;
     }
 }
 
@@ -44,8 +48,8 @@ class PremiumTicket extends MovieTicket {
     }
 
     @Override
-    public double getPricePerTicket() {
-        return 250.0;
+    public double getBasePricePerTicket() {
+        return 250.00;
     }
 }
 
@@ -55,44 +59,52 @@ class ReclinerTicket extends MovieTicket {
     }
 
     @Override
-    public double getPricePerTicket() {
-        return 400.0;
+    public double getBasePricePerTicket() {
+        return 400.00;
     }
 }
 
 public class Experiment6 {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        if (!scanner.hasNextInt()) return;
-
-        int n = scanner.nextInt();
-        List<MovieTicket> bookings = new ArrayList<>();
-
-        for (int i = 0; i < n; i++) {
-            String seat = scanner.next();
-            int count = scanner.nextInt();
-
-            switch (seat.toUpperCase()) {
-                case "REGULAR":
-                    bookings.add(new RegularTicket(count));
-                    break;
-                case "PREMIUM":
-                    bookings.add(new PremiumTicket(count));
-                    break;
-                case "RECLINER":
-                    bookings.add(new ReclinerTicket(count));
-                    break;
+        try (Scanner sc = new Scanner(System.in)) {
+            if (!sc.hasNextInt()) {
+                return;
             }
-        }
 
-        double totalCollected = 0;
-        for (MovieTicket booking : bookings) {
-            double amount = booking.calculateTotalAmount();
-            totalCollected += amount;
-            System.out.printf("%s: %.2f%n", booking.getSeatType(), amount);
-        }
+            int bookingCount = sc.nextInt();
+            List<MovieTicket> orders = new ArrayList<>(bookingCount);
 
-        System.out.printf("Total: %.2f%n", totalCollected);
-        scanner.close();
+            for (int i = 0; i < bookingCount; i++) {
+                String type = sc.next().toUpperCase();
+                int count = sc.nextInt();
+
+                MovieTicket ticket = createTicket(type, count);
+                if (ticket != null) {
+                    orders.add(ticket);
+                }
+            }
+
+            double totalRevenue = 0.0;
+            for (MovieTicket ticket : orders) {
+                double ticketTotal = ticket.calculateTotalAmount();
+                totalRevenue += ticketTotal;
+                System.out.printf("%s: %.2f%n", ticket.getSeatType(), ticketTotal);
+            }
+
+            System.out.printf("Total: %.2f%n", totalRevenue);
+        }
+    }
+
+    private static MovieTicket createTicket(String type, int count) {
+        switch (type) {
+            case "REGULAR":
+                return new RegularTicket(count);
+            case "PREMIUM":
+                return new PremiumTicket(count);
+            case "RECLINER":
+                return new ReclinerTicket(count);
+            default:
+                return null;
+        }
     }
 }

@@ -2,119 +2,135 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-interface NightServiceable {}
+/**
+ * Experiment 9: Urban Cab Fare Calculator
+ * Demonstrates marker interfaces for runtime capability checking,
+ * base rate calculations, minimum fare floors, and nighttime surcharges.
+ */
+interface NightServiceable {
+    // Marker interface indicating nighttime operational eligibility
+}
 
 abstract class Cab {
-    private String type;
-    private double ratePerKm;
+    private final String modelName;
+    private final double perKmRate;
 
-    public Cab(String type, double ratePerKm) {
-        this.type = type;
-        this.ratePerKm = ratePerKm;
+    public Cab(String modelName, double perKmRate) {
+        this.modelName = modelName;
+        this.perKmRate = perKmRate;
     }
 
-    public String getType() {
-        return type;
+    public String getModelName() {
+        return modelName;
     }
 
-    public double calculateFare(double distanceKm, String time) {
-        double rawFare = distanceKm * ratePerKm;
-        double fare = Math.max(rawFare, 100.0);
+    public double getPerKmRate() {
+        return perKmRate;
+    }
 
-        if ("NIGHT".equalsIgnoreCase(time)) {
-            fare *= 1.20;
+    public double calculateFare(double distanceKm, String timeOfDay) {
+        double distanceCharge = distanceKm * perKmRate;
+        double baseFare = Math.max(distanceCharge, 100.00);
+
+        if ("NIGHT".equalsIgnoreCase(timeOfDay)) {
+            baseFare *= 1.20;
         }
 
-        return fare;
+        return baseFare;
     }
 }
 
 class MiniCab extends Cab {
     public MiniCab() {
-        super("MINI", 10.0);
+        super("MINI", 10.00);
     }
 }
 
 class SedanCab extends Cab implements NightServiceable {
     public SedanCab() {
-        super("SEDAN", 14.0);
+        super("SEDAN", 14.00);
     }
 }
 
 class SUVCab extends Cab implements NightServiceable {
     public SUVCab() {
-        super("SUV", 18.0);
+        super("SUV", 18.00);
     }
 }
 
-class TripRequest {
-    private Cab cab;
-    private double distanceKm;
-    private String time;
+class TripBooking {
+    private final Cab vehicle;
+    private final double distanceKm;
+    private final String timeOfDay;
 
-    public TripRequest(Cab cab, double distanceKm, String time) {
-        this.cab = cab;
+    public TripBooking(Cab vehicle, double distanceKm, String timeOfDay) {
+        this.vehicle = vehicle;
         this.distanceKm = distanceKm;
-        this.time = time;
+        this.timeOfDay = timeOfDay;
     }
 
-    public Cab getCab() {
-        return cab;
+    public Cab getVehicle() {
+        return vehicle;
     }
 
     public double getDistanceKm() {
         return distanceKm;
     }
 
-    public String getTime() {
-        return time;
+    public String getTimeOfDay() {
+        return timeOfDay;
     }
 }
 
 public class Experiment9 {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        if (!scanner.hasNextInt()) return;
-
-        int n = scanner.nextInt();
-        List<TripRequest> requests = new ArrayList<>();
-
-        for (int i = 0; i < n; i++) {
-            String cabType = scanner.next();
-            double km = scanner.nextDouble();
-            String time = scanner.next();
-
-            Cab cab = null;
-            switch (cabType.toUpperCase()) {
-                case "MINI":
-                    cab = new MiniCab();
-                    break;
-                case "SEDAN":
-                    cab = new SedanCab();
-                    break;
-                case "SUV":
-                    cab = new SUVCab();
-                    break;
+        try (Scanner sc = new Scanner(System.in)) {
+            if (!sc.hasNextInt()) {
+                return;
             }
 
-            if (cab != null) {
-                requests.add(new TripRequest(cab, km, time));
+            int n = sc.nextInt();
+            List<TripBooking> bookings = new ArrayList<>(n);
+
+            for (int i = 0; i < n; i++) {
+                String model = sc.next().toUpperCase();
+                double km = sc.nextDouble();
+                String timeOfDay = sc.next();
+
+                Cab vehicle = createCab(model);
+                if (vehicle != null) {
+                    bookings.add(new TripBooking(vehicle, km, timeOfDay));
+                }
             }
+
+            double totalRevenue = 0.0;
+            for (TripBooking booking : bookings) {
+                Cab vehicle = booking.getVehicle();
+                boolean isNight = "NIGHT".equalsIgnoreCase(booking.getTimeOfDay());
+
+                if (isNight && !(vehicle instanceof NightServiceable)) {
+                    System.out.printf("%s: night service not available%n", vehicle.getModelName());
+                } else {
+                    double fare = vehicle.calculateFare(booking.getDistanceKm(), booking.getTimeOfDay());
+                    totalRevenue += fare;
+                    System.out.printf("%s: %.2f%n", vehicle.getModelName(), fare);
+                }
+            }
+
+            System.out.printf("Total: %.2f%n", totalRevenue);
         }
+    }
 
-        double totalFare = 0;
-        for (TripRequest req : requests) {
-            Cab cab = req.getCab();
-            if ("NIGHT".equalsIgnoreCase(req.getTime()) && !(cab instanceof NightServiceable)) {
-                System.out.printf("%s: night service not available%n", cab.getType());
-            } else {
-                double fare = cab.calculateFare(req.getDistanceKm(), req.getTime());
-                totalFare += fare;
-                System.out.printf("%s: %.2f%n", cab.getType(), fare);
-            }
+    private static Cab createCab(String model) {
+        switch (model) {
+            case "MINI":
+                return new MiniCab();
+            case "SEDAN":
+                return new SedanCab();
+            case "SUV":
+                return new SUVCab();
+            default:
+                return null;
         }
-
-        System.out.printf("Total: %.2f%n", totalFare);
-        scanner.close();
     }
 }
